@@ -97,3 +97,31 @@ Future test() async {
 - If request return a result, all `onResponse` callbacks will be called.
 - If request throws an exception, all `onError` callbacks will be called.
 - If a callback throws an exception, it will be ignored.
+
+## Extensions
+
+### RecordExtension
+
+RecordExtension is used to store an unique data for each request.
+Unlike FutureRequestOptions, a record cannot be modified by other Interceptors.
+
+Example:
+
+```dart
+class InterceptorWithRecord extends Interceptor with RecordExtension {
+  int id = 0;
+
+  @override
+  InterceptorRequestCallback get onRequest => (option) {
+    setRecord(id++);
+    return option;
+  };
+
+  @override
+  InterceptorDataCallback get onResponse => (option, data) {
+    /// Show the data that has been set by the previous callback of this request.
+    print('Record = $record');
+    return data;
+  };
+}
+```

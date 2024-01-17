@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:future_interceptor/src/extension/record_extension.dart';
+
 import 'future_exception.dart';
 import 'options.dart';
 import 'response.dart';
@@ -21,12 +23,16 @@ class FutureInterceptor<T> {
 
   Future<FutureResponse<T>> fetch(FutureRequestOptions<T> requestOptions) async {
     FutureRequestOptions option = requestOptions;
+    final Map extensionData = {};
     for (final interceptor in interceptors) {
       if (interceptor.onRequest != null) {
         try {
+          _processExtensionsBeforeCallback(extensionData, interceptor);
           option = await interceptor.onRequest!.call(option);
         } catch (e, st) {
           errorPrinter?.call(e, st);
+        } finally {
+          _processExtensionsAfterCallback(extensionData, interceptor);
         }
       }
     }
@@ -37,9 +43,12 @@ class FutureInterceptor<T> {
       for (final interceptor in interceptors) {
         if (interceptor.onResponse != null) {
           try {
+            _processExtensionsBeforeCallback(extensionData, interceptor);
             data = await interceptor.onResponse!.call(option, data);
           } catch (e, st) {
             errorPrinter?.call(e, st);
+          } finally {
+            _processExtensionsAfterCallback(extensionData, interceptor);
           }
         }
       }
@@ -55,9 +64,12 @@ class FutureInterceptor<T> {
       for (final interceptor in interceptors) {
         if (interceptor.onError != null) {
           try {
+            _processExtensionsBeforeCallback(extensionData, interceptor);
             error = await interceptor.onError!.call(option, error);
           } catch (e, st) {
             errorPrinter?.call(e, st);
+          } finally {
+            _processExtensionsAfterCallback(extensionData, interceptor);
           }
         }
       }
@@ -69,9 +81,12 @@ class FutureInterceptor<T> {
     for (final interceptor in interceptors) {
       if (interceptor.onTransform != null) {
         try {
+          _processExtensionsBeforeCallback(extensionData, interceptor);
           response = await interceptor.onTransform!.call(response);
         } catch (e, st) {
           errorPrinter?.call(e, st);
+        } finally {
+          _processExtensionsAfterCallback(extensionData, interceptor);
         }
       }
     }
@@ -93,6 +108,19 @@ class FutureInterceptor<T> {
         error: Exception("type '${response.data.runtimeType}' is not a subtype of type '$T' in type cast"),
       ),
     );
+  }
+
+  void _processExtensionsBeforeCallback(Map extensionData, Interceptor interceptor) {
+    if (interceptor is RecordExtension) {
+      (interceptor as RecordExtension).setRecord(extensionData[interceptor]);
+    }
+  }
+
+  void _processExtensionsAfterCallback(Map extensionData, Interceptor interceptor) {
+    if (interceptor is RecordExtension) {
+      extensionData[interceptor] = (interceptor as RecordExtension).record;
+      (interceptor as RecordExtension).setRecord(null);
+    }
   }
 }
 

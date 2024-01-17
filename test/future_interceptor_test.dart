@@ -422,4 +422,94 @@ void main() {
     expect(res.error, null);
   });
 
+  group('Record extension', () {
+    test('RecordExtension with data', () async {
+      futureInterceptor.interceptors.clear();
+      final interceptor = RecordInterceptor();
+      futureInterceptor.interceptors.add(
+          interceptor
+      );
+
+      final res = await futureInterceptor.fetch(
+        FutureRequestOptions(
+          request: () {
+            return "0";
+          },
+        ),
+      );
+      expect(interceptor.record, null);
+      expect(interceptor.actual.length, 3);
+      expect(interceptor.actual[0], null);
+      expect(interceptor.actual[1], interceptor.records[0]);
+      expect(interceptor.actual[2], interceptor.records[1]);
+      expect(res.error, null);
+    });
+
+    test('RecordExtension with error', () async {
+      futureInterceptor.interceptors.clear();
+      final interceptor = RecordInterceptor();
+      final interceptor2 = RecordInterceptor();
+      futureInterceptor.interceptors.addAll([
+          interceptor,
+          RecordInterceptor(),
+          interceptor2,
+          RecordInterceptor(),
+        ]
+      );
+
+      final res = await futureInterceptor.fetch(
+        FutureRequestOptions(
+          request: () {
+            throw Exception();
+          },
+        ),
+      );
+      expect(interceptor.record, null);
+      expect(interceptor.actual.length, 3);
+      expect(interceptor.actual[0], null);
+      expect(interceptor.actual[1], interceptor.records[0]);
+      expect(interceptor.actual[2], interceptor.records[3]);
+
+      expect(interceptor2.record, null);
+      expect(interceptor2.actual.length, 3);
+      expect(interceptor2.actual[0], null);
+      expect(interceptor2.actual[1], interceptor2.records[0]);
+      expect(interceptor2.actual[2], interceptor2.records[3]);
+      expect(res.error != null, true);
+    });
+  });
+}
+
+class RecordInterceptor extends Interceptor with RecordExtension {
+
+  List<Object> records = [Object(), Object(), Object(), Object()];
+  List<dynamic> actual = [];
+
+  @override
+  InterceptorRequestCallback get onRequest => (option) {
+    actual.add(record);
+    setRecord(records[0]);
+    return option;
+  };
+
+  @override
+  InterceptorDataCallback get onResponse => (option, data) {
+    actual.add(record);
+    setRecord(records[1]);
+    return data;
+  };
+
+  @override
+  InterceptorTransformCallback get onTransform => (response) {
+    actual.add(record);
+    setRecord(records[2]);
+    return response;
+  };
+
+  @override
+  InterceptorErrorCallback get onError => (options, error) {
+    actual.add(record);
+    setRecord(records[3]);
+    return error;
+  };
 }
