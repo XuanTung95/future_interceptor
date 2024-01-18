@@ -19,6 +19,7 @@ Auto catch all exception.
 - `onError`: allows monitoring and modification of the error.
 - `onTransform`: allow modification of the FutureResponse before returning to the caller.
 - `extra`: Custom field that can be retrieved later.
+- Extensions: a way to add a specific feature to an Interceptor
 
 ## Usage
 
@@ -103,7 +104,10 @@ Future test() async {
 ### RecordExtension
 
 RecordExtension is used to store an unique data for each request.
+
 Unlike FutureRequestOptions, a record cannot be modified by other Interceptors.
+
+A record is not shared between requests.
 
 Example:
 

@@ -1,6 +1,6 @@
 name: future_interceptor
 description: "Integrate Interceptors into an asynchronous operation, inspired by Dio."
-version: 0.0.1
+version: 0.1.0
 homepage: https://github.com/XuanTung95/future_interceptor.git
 
 environment:
