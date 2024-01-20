@@ -1,12 +1,12 @@
 part of 'future_interceptor.dart';
 
-typedef InterceptorRequestCallback = FutureOr<FutureRequestOptions> Function(FutureRequestOptions options);
+typedef InterceptorRequestCallback = FutureRequestOptions Function(FutureRequestOptions options);
 
-typedef InterceptorDataCallback = FutureOr<dynamic> Function(FutureRequestOptions options, dynamic data);
+typedef InterceptorDataCallback = dynamic Function(FutureRequestOptions options, dynamic data);
 
-typedef InterceptorErrorCallback = FutureOr<FutureException> Function(FutureRequestOptions options, FutureException error);
+typedef InterceptorErrorCallback = FutureException Function(FutureRequestOptions options, FutureException error);
 
-typedef InterceptorTransformCallback = FutureOr<FutureResponse> Function(FutureResponse response);
+typedef InterceptorTransformCallback = FutureResponse Function(FutureResponse response);
 
 class Interceptor {
   const Interceptor();
@@ -47,7 +47,7 @@ class InterceptorWrapper extends Interceptor {
   InterceptorTransformCallback? get onTransform => _onTransform;
 }
 
-class FutureInterceptors extends ListMixin<Interceptor> {
+class Interceptors extends ListMixin<Interceptor> {
   /// Define a nullable list to be capable with growable elements.
   final List<Interceptor?> _list = [];
 

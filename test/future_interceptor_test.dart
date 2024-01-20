@@ -6,7 +6,7 @@ void main() {
   late FutureInterceptor<String> futureInterceptor;
 
   setUp(() {
-    futureInterceptor = FutureInterceptor<String>();
+    futureInterceptor = FutureInterceptor<String>(errorPrinter: null);
   });
 
   test('Multiple Interceptors', () async {
@@ -21,10 +21,10 @@ void main() {
             }
           );
         },
-        onResponse: (option, data) async {
+        onResponse: (option, data) {
           return '${data}-r1';
         },
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(
             data: "${response.data}-t1",
             requestOptions: response.requestOptions,
@@ -41,10 +41,10 @@ void main() {
               }
           );
         },
-        onResponse: (option, data) async {
+        onResponse: (option, data) {
           return '${data}-r2';
         },
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(
             data: "${response.data}-t2",
             requestOptions: response.requestOptions,
@@ -61,10 +61,10 @@ void main() {
               }
           );
         },
-        onResponse: (option, data) async {
+        onResponse: (option, data) {
           return '${data}-r3';
         },
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(
             data: "${response.data}-t3",
             requestOptions: response.requestOptions,
@@ -146,7 +146,7 @@ void main() {
         onResponse: (option, data) async {
           return [1];
         },
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(
             data: {
               'key': 1
@@ -169,7 +169,7 @@ void main() {
             'key': 2
           };
         },
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(
             data: <int>{2, 3},
             requestOptions: response.requestOptions,
@@ -250,7 +250,7 @@ void main() {
     futureInterceptor.interceptors.clear();
     futureInterceptor.interceptors.add(
       InterceptorWrapper(
-        onResponse: (option, data) async {
+        onResponse: (option, data) {
           if (data is String) {
             return '${data}2';
           }
@@ -362,7 +362,7 @@ void main() {
     futureInterceptor.interceptors.clear();
     futureInterceptor.interceptors.add(
       InterceptorWrapper(
-        onError: (option, error) async {
+        onError: (option, error) {
           throw Exception("1");
         },
       ),
@@ -384,7 +384,7 @@ void main() {
     futureInterceptor.interceptors.clear();
     futureInterceptor.interceptors.add(
       InterceptorWrapper(
-        onTransform: (response) async {
+        onTransform: (response) {
           return FutureResponse(data: "1", requestOptions: response.requestOptions,);
         },
       ),
@@ -405,7 +405,7 @@ void main() {
     futureInterceptor.interceptors.clear();
     futureInterceptor.interceptors.add(
       InterceptorWrapper(
-        onTransform: (response) async {
+        onTransform: (response) {
           throw Exception("1");
         },
       ),
@@ -476,6 +476,84 @@ void main() {
       expect(interceptor2.actual[1], interceptor2.records[0]);
       expect(interceptor2.actual[2], interceptor2.records[3]);
       expect(res.error != null, true);
+    });
+  });
+
+  group('Listener', () {
+    test('Listener test', () async {
+      int count = 0;
+      futureInterceptor.interceptors.clear();
+      futureInterceptor.interceptors.addAll([
+          InterceptorWrapper(
+            onRequest: (options) {
+              count = 1;
+              return options;
+            },
+            onResponse: (options, data) {
+              count = 2;
+              return data;
+            },
+            onError: (options, error) {
+              count = 3;
+              return error;
+            },
+            onTransform: (res) {
+              count = 4;
+              return res;
+            }
+          ),
+          InterceptorWrapper(
+              onRequest: (options) {
+                count = 5;
+                return options;
+              },
+              onResponse: (options, data) {
+                count = 6;
+                return data;
+              },
+              onError: (options, error) {
+                count = 7;
+                return error;
+              },
+              onTransform: (res) {
+                count = 8;
+                return res;
+              }
+          ),
+      ]);
+      int request = 0;
+      int response = 0;
+      futureInterceptor.addListener(FutureListener(
+        requestCallback: () {
+          request = count;
+        },
+        responseCallback: () {
+          response = count;
+        }
+      ));
+
+      await futureInterceptor.fetch(
+        FutureRequestOptions(
+          request: () {
+            count = 9;
+            return "0";
+          },
+        ),
+      );
+      expect(request, 5);
+      expect(response, 8);
+      request = 0;
+      response = 0;
+      await futureInterceptor.fetch(
+        FutureRequestOptions(
+          request: () {
+            count = 9;
+            throw Exception();
+          },
+        ),
+      );
+      expect(request, 5);
+      expect(response, 8);
     });
   });
 }
